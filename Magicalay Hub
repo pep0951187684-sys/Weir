@@ -1,3 +1,4 @@
+
 -- MagicAlay Hub UI Script (Mini Edition + ShiftLock)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
@@ -245,4 +246,28 @@ end)
 
 local function getTarget() return selP ~= "" and P:FindFirstChild(selP) end
 N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0,12,0,128), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "👁️ ส่องดู", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() local t = getTarget() if t and t.Character and t.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = t.Character.Humanoid end end) C(CC:GetChildren()[#CC:GetChildren()], UDim.new(0, 6))
-N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0.53,0,0,128), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ยกเลิกส่อง", TextColor3 = Color3.new(1,1,1), T
+N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0.53,0,0,128), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ยกเลิกส่อง", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() if LP.Character and LP.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = LP.Character.Humanoid end end) C(CC:GetChildren()[#CC:GetChildren()], UDim.new(0, 6))
+N("TextButton", CC, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,186), BackgroundColor3 = Color3.fromRGB(52,150,220), Font = Enum.Font.GothamSemibold, Text = "🌀 วาร์ปไปหาผู้เล่น", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() local t = getTarget() if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(2, 0, 0) end end) C(CC:GetChildren()[#CC:GetChildren()], UDim.new(0, 6))
+
+-- Attack Page Header
+N("TextButton", P5, {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Color3.fromRGB(95, 45, 180), Font = Enum.Font.GothamSemibold, Text = "⚔️ ระบบโจมตี", TextColor3 = Color3.new(1, 1, 1), TextSize = 14, LayoutOrder = 1}) C(P5:GetChildren()[#P5:GetChildren()])
+
+-- Main Loop (Noclip, Speed, Jump, ShiftLock Rotation)
+R.Stepped:Connect(function()
+    local char = LP.Character
+    if char then
+        if noclip then for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then 
+            if spd then hum.WalkSpeed = spdVal end 
+            if jmp then hum.JumpPower = jmpVal end 
+        end
+        
+        -- ShiftLock Direction Lock
+        if shiftLockFeatureOn and isShiftLockActive and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            local _, y = Cam.CFrame:ToEulerAnglesYXZ()
+            hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, y, 0)
+        end
+    end
+end)
