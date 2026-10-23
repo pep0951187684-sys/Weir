@@ -1,5 +1,4 @@
-
--- MagicAlay Hub UI Script (Mini Edition + ShiftLock)
+-- MagicAlay Hub UI Script (Mini Edition + ShiftLock + Settings Control)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
 if CG:FindFirstChild("MagicAlayHub") then CG.MagicAlayHub:Destroy() end
@@ -65,8 +64,9 @@ tab("👤 ผู้เล่น", "", P2) tab("🔑 โปรแกรม", "", 
 N("TextButton", P1, {Size = UDim2.new(1,0,0,40), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "✨ MagicAlay Hub", TextColor3 = Color3.new(1,1,1), TextSize = 14, LayoutOrder = 1}) C(P1:GetChildren()[#P1:GetChildren()])
 C(N("TextLabel", P1, {Size = UDim2.new(1,0,0,70), BackgroundColor3 = Color3.fromRGB(38,26,65), Font = Enum.Font.Gotham, Text = "ศูนย์รวมสคริปต์และชุมชนอย่างเป็นทางการ\nโปรดใช้อย่างระมัดระวัง", TextColor3 = Color3.fromRGB(200,190,225), TextSize = 12, TextWrapped = true, LayoutOrder = 2}))
 
+local fpsConn
 local fc, lt = 0, os.clock()
-R.RenderStepped:Connect(function() fc = fc + 1 local ct = os.clock() if ct - lt >= 1 then Fps.Text = "⚡ FPS: "..math.floor(fc / (ct - lt)) fc, lt = 0, ct end end)
+fpsConn = R.RenderStepped:Connect(function() fc = fc + 1 local ct = os.clock() if ct - lt >= 1 then Fps.Text = "⚡ FPS: "..math.floor(fc / (ct - lt)) fc, lt = 0, ct end end)
 
 -- Controls & Component
 local spd, spdVal, jmp, jmpVal, noclip = false, 16, false, 50, false
@@ -113,11 +113,7 @@ toggleSlider(PFC, "⚡ความเร็ว", "16-200", 16, 200, 36, function
     spd, spdVal = o, v
     local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
     if hum then
-        if o then
-            origSpd = hum.WalkSpeed
-        else
-            hum.WalkSpeed = origSpd
-        end
+        if o then origSpd = hum.WalkSpeed else hum.WalkSpeed = origSpd end
     end
 end)
 
@@ -125,11 +121,7 @@ toggleSlider(PFC, "🌪️กระโดดสูง", "50-500", 50, 500, 86, f
     jmp, jmpVal = o, v
     local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
     if hum then
-        if o then
-            origJmp = hum.JumpPower
-        else
-            hum.JumpPower = origJmp
-        end
+        if o then origJmp = hum.JumpPower else hum.JumpPower = origJmp end
     end
 end)
 
@@ -148,7 +140,7 @@ toggleSlider(AAC, "ระบบกันหลุด", nil, 0, 0, 36, function(o
     elseif aConn then aConn:Disconnect() end
 end)
 
--- ShiftLock (ชิปล็อคหน้าจอ) Section & Button
+-- ShiftLock Section
 local shiftLockFeatureOn, isShiftLockActive = false, false
 local SLC = N("Frame", P4, {Size = UDim2.new(1,0,0,90), BackgroundColor3 = Color3.fromRGB(38, 26, 65), LayoutOrder = 3}) C(SLC)
 N("TextLabel", SLC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🔒 ชิปล็อคหน้าจอ (ShiftLock)", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
@@ -192,9 +184,7 @@ SLMainBtn.MouseButton1Click:Connect(function()
     isShiftLockActive = not isShiftLockActive
     local char = LP.Character
     local hum = char and char:FindFirstChild("Humanoid")
-    if hum then
-        hum.AutoRotate = not isShiftLockActive
-    end
+    if hum then hum.AutoRotate = not isShiftLockActive end
     if isShiftLockActive then
         SLMainBtn.BackgroundColor3 = Color3.fromRGB(95, 45, 180)
         SLLabel.TextColor3 = Color3.fromRGB(52, 211, 153)
@@ -246,28 +236,4 @@ end)
 
 local function getTarget() return selP ~= "" and P:FindFirstChild(selP) end
 N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0,12,0,128), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "👁️ ส่องดู", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() local t = getTarget() if t and t.Character and t.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = t.Character.Humanoid end end) C(CC:GetChildren()[#CC:GetChildren()], UDim.new(0, 6))
-N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0.53,0,0,128), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ยกเลิกส่อง", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() if LP.Character and LP.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = LP.Character.Humanoid end end) C(CC:GetChildren()[#CC:GetChildren()], UDim.new(0, 6))
-N("TextButton", CC, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,186), BackgroundColor3 = Color3.fromRGB(52,150,220), Font = Enum.Font.GothamSemibold, Text = "🌀 วาร์ปไปหาผู้เล่น", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() local t = getTarget() if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(2, 0, 0) end end) C(CC:GetChildren()[#CC:GetChildren()], UDim.new(0, 6))
-
--- Attack Page Header
-N("TextButton", P5, {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Color3.fromRGB(95, 45, 180), Font = Enum.Font.GothamSemibold, Text = "⚔️ ระบบโจมตี", TextColor3 = Color3.new(1, 1, 1), TextSize = 14, LayoutOrder = 1}) C(P5:GetChildren()[#P5:GetChildren()])
-
--- Main Loop (Noclip, Speed, Jump, ShiftLock Rotation)
-R.Stepped:Connect(function()
-    local char = LP.Character
-    if char then
-        if noclip then for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then 
-            if spd then hum.WalkSpeed = spdVal end 
-            if jmp then hum.JumpPower = jmpVal end 
-        end
-        
-        -- ShiftLock Direction Lock
-        if shiftLockFeatureOn and isShiftLockActive and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            local _, y = Cam.CFrame:ToEulerAnglesYXZ()
-            hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, y, 0)
-        end
-    end
-end)
+N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0.53,0,0,128), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ยกเลิกส่อง", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() if LP.Character and LP
