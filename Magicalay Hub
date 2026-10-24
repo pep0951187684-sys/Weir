@@ -1,146 +1,449 @@
--- MagicAlay Hub UI (Loading Intro + Short Search + ShiftLock)
+-- MagicAlay Hub UI Script (Mini Edition + Fullscreen Loading Screen)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
-if CG:FindFirstChild("MagicAlayHub") then CG.MagicAlayHub:Destroy() end
 
-local SG = Instance.new("ScreenGui", CG) SG.Name, SG.ResetOnSpawn = "MagicAlayHub", false
-local function N(c, p, pr) local o = Instance.new(c) for k, v in pairs(pr or {}) do o[k] = v end o.Parent = p return o end
+if CG:FindFirstChild("MagicAlayHub") then 
+    CG.MagicAlayHub:Destroy() 
+end
+
+local SG = Instance.new("ScreenGui")
+SG.Name = "MagicAlayHub"
+SG.ResetOnSpawn = false
+SG.Parent = CG
+
+local function N(c, p, pr) 
+    local o = Instance.new(c)
+    for k, v in pairs(pr or {}) do 
+        o[k] = v 
+    end 
+    o.Parent = p
+    return o 
+end
+
 local function C(p, r) return N("UICorner", p, {CornerRadius = r or UDim.new(0, 8)}) end
 local function S(p, c, t) return N("UIStroke", p, {Color = c or Color3.fromRGB(130, 70, 220), Thickness = t or 1.5}) end
 
--- ⏳ ระบบหน้าต่างโหลดตอนรันสคริปต์
-local Intro = N("Frame", SG, {Size = UDim2.new(0, 260, 0, 70), Position = UDim2.new(0.5, -130, 0.5, -35), BackgroundColor3 = Color3.fromRGB(25, 18, 45), ZIndex = 200})
-C(Intro, UDim.new(0, 10)) S(Intro, Color3.fromRGB(130, 70, 220), 2)
-local IntroTxt = N("TextLabel", Intro, {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "⏳ กำลังดาวโหลด...", TextColor3 = Color3.new(1,1,1), TextSize = 13, ZIndex = 201})
+---------------------------------------------------------
+-- ⏳ FULLSCREEN LOADING SCREEN SYSTEM
+---------------------------------------------------------
+local LoadBackground = N("Frame", SG, {
+    Size = UDim2.new(1, 0, 1, 0),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundColor3 = Color3.fromRGB(12, 8, 22),
+    BackgroundTransparency = 0,
+    ZIndex = 999,
+    Active = true
+})
 
-task.spawn(function()
-    task.wait(1.2)
-    IntroTxt.Text = "✨ MagicAlay HUB"
-    task.wait(1.5)
-    T:Create(Intro, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-    T:Create(IntroTxt, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-    task.wait(0.4)
-    Intro:Destroy()
-end)
+-- Blur Effect ด้านหลัง
+local Lighting = game:GetService("Lighting")
+local Blur = Instance.new("BlurEffect")
+Blur.Size = 20
+Blur.Parent = Lighting
 
--- Main UI
-local TB = N("ImageButton", SG, {Position = UDim2.new(0.5, -25, 0, 20), Size = UDim2.new(0, 50, 0, 50), Image = "rbxassetid://134610671303702", BackgroundColor3 = Color3.fromRGB(25, 18, 45), Draggable = true, Active = true}) C(TB, UDim.new(1, 0)) S(TB)
-local M = N("Frame", SG, {Position = UDim2.new(0.5, -275, 0.5, -175), Size = UDim2.new(0, 550, 0, 350), BackgroundColor3 = Color3.fromRGB(22, 15, 38), Visible = false, Active = true, Draggable = true}) C(M, UDim.new(0, 12)) S(M)
+-- Card ตรงกลางหน้าจอ
+local LoadCard = N("Frame", LoadBackground, {
+    Size = UDim2.new(0, 360, 0, 220),
+    Position = UDim2.new(0.5, -180, 0.5, -110),
+    BackgroundColor3 = Color3.fromRGB(22, 15, 38),
+    ZIndex = 1000
+})
+C(LoadCard, UDim.new(0, 16))
+S(LoadCard, Color3.fromRGB(140, 75, 235), 2.5)
+
+-- Hub Logo / Icon
+local LoadIcon = N("ImageLabel", LoadCard, {
+    Size = UDim2.new(0, 65, 0, 65),
+    Position = UDim2.new(0.5, -32, 0, 20),
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://134610671303702",
+    ZIndex = 1001
+})
+
+-- Hub Title
+local LoadTitle = N("TextLabel", LoadCard, {
+    Size = UDim2.new(1, 0, 0, 30),
+    Position = UDim2.new(0, 0, 0, 92),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBold,
+    Text = "MagicAlay HUB",
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextSize = 22,
+    ZIndex = 1001
+})
+
+-- Status Text (%)
+local LoadStatus = N("TextLabel", LoadCard, {
+    Size = UDim2.new(1, 0, 0, 20),
+    Position = UDim2.new(0, 0, 0, 126),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamMedium,
+    Text = "กำลังดาวน์โหลด... 0%",
+    TextColor3 = Color3.fromRGB(200, 185, 235),
+    TextSize = 13,
+    ZIndex = 1001
+})
+
+-- Progress Bar Background
+local BarBackground = N("Frame", LoadCard, {
+    Size = UDim2.new(1, -50, 0, 12),
+    Position = UDim2.new(0, 25, 0, 158),
+    BackgroundColor3 = Color3.fromRGB(38, 26, 65),
+    ZIndex = 1001
+})
+C(BarBackground, UDim.new(1, 0))
+
+-- Progress Bar Fill (หลอดโหลด)
+local BarFill = N("Frame", BarBackground, {
+    Size = UDim2.new(0, 0, 1, 0),
+    BackgroundColor3 = Color3.fromRGB(150, 80, 255),
+    ZIndex = 1002
+})
+C(BarFill, UDim.new(1, 0))
+
+-- Credit Footer
+N("TextLabel", LoadCard, {
+    Size = UDim2.new(1, 0, 0, 20),
+    Position = UDim2.new(0, 0, 1, -22),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.Gotham,
+    Text = "Official Script System",
+    TextColor3 = Color3.fromRGB(120, 100, 150),
+    TextSize = 10,
+    ZIndex = 1001
+})
+
+---------------------------------------------------------
+-- Tooltip Modal
+---------------------------------------------------------
+local Modal = N("Frame", SG, {Size = UDim2.new(0, 260, 0, 140), Position = UDim2.new(0.5, -130, 0.5, -70), BackgroundColor3 = Color3.fromRGB(35, 25, 55), Visible = false, ZIndex = 100})
+C(Modal, UDim.new(0, 10)) S(Modal, Color3.fromRGB(130, 70, 220), 2)
+local MTitle = N("TextLabel", Modal, {Size = UDim2.new(1, -20, 0, 30), Position = UDim2.new(0, 10, 0, 10), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "📌 วิธีใช้งาน", TextColor3 = Color3.new(1,1,1), TextSize = 13, ZIndex = 101, TextXAlignment = 0})
+local MDesc = N("TextLabel", Modal, {Size = UDim2.new(1, -20, 0, 50), Position = UDim2.new(0, 10, 0, 45), BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = "", TextColor3 = Color3.fromRGB(210,200,230), TextSize = 11, ZIndex = 101, TextWrapped = true, TextXAlignment = 0})
+local CloseModalBtn = N("TextButton", Modal, {Size = UDim2.new(0, 80, 0, 26), Position = UDim2.new(0.5, -40, 1, -36), BackgroundColor3 = Color3.fromRGB(95, 45, 180), Font = Enum.Font.GothamBold, Text = "ปิด", TextColor3 = Color3.new(1,1,1), TextSize = 11, ZIndex = 101})
+CloseModalBtn.MouseButton1Click:Connect(function() Modal.Visible = false end) 
+C(CloseModalBtn, UDim.new(0, 6))
+
+local function addHelp(p, title, text)
+    local b = N("TextButton", p, {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(1, -24, 0, 10), BackgroundColor3 = Color3.fromRGB(55, 40, 85), Font = Enum.Font.GothamBold, Text = "?", TextColor3 = Color3.new(1,1,1), TextSize = 11, ZIndex = 10}) 
+    C(b, UDim.new(1, 0))
+    b.MouseButton1Click:Connect(function() MTitle.Text, MDesc.Text, Modal.Visible = "📌 "..title, text, true end)
+end
+
+-- Main Window & Toggle
+local TB = N("ImageButton", SG, {Position = UDim2.new(0.5, -25, 0, 20), Size = UDim2.new(0, 50, 0, 50), Image = "rbxassetid://134610671303702", BackgroundColor3 = Color3.fromRGB(25, 18, 45), Draggable = true, Active = true}) C(TB, UDim.new(1, 0)) S(TB, Color3.fromRGB(130, 70, 220), 2)
+local M = N("Frame", SG, {Position = UDim2.new(0.5, -275, 0.5, -175), Size = UDim2.new(0, 550, 0, 350), BackgroundColor3 = Color3.fromRGB(22, 15, 38), Visible = false, Active = true, Draggable = true}) C(M, UDim.new(0, 12)) S(M, Color3.fromRGB(130, 70, 220), 2)
 TB.MouseButton1Click:Connect(function() M.Visible = not M.Visible end)
 
--- Header
+-- Header Bar & Player Info
 local Top = N("Frame", M, {Size = UDim2.new(1, 0, 0, 45), BackgroundColor3 = Color3.fromRGB(32, 22, 55)}) C(Top, UDim.new(0, 12))
-N("TextLabel", Top, {Size = UDim2.new(0, 150, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "MagicAlay Hub", TextColor3 = Color3.new(1,1,1), TextSize = 14, TextXAlignment = 0})
-local Fps = N("TextLabel", Top, {Size = UDim2.new(0, 75, 0, 24), Position = UDim2.new(1, -120, 0.5, -12), BackgroundColor3 = Color3.fromRGB(22, 14, 38), Font = Enum.Font.GothamBold, Text = "⚡ FPS: --", TextColor3 = Color3.fromRGB(52, 211, 153), TextSize = 10}) C(Fps, UDim.new(0, 6)) S(Fps)
+N("Frame", Top, {Size = UDim2.new(1, 0, 0.3, 0), Position = UDim2.new(0, 0, 0.7, 0), BackgroundColor3 = Color3.fromRGB(32, 22, 55), BorderSizePixel = 0})
+N("ImageLabel", Top, {Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(0, 8, 0.5, -15), BackgroundTransparency = 1, Image = "rbxassetid://134610671303702"})
+N("TextLabel", Top, {Size = UDim2.new(0, 120, 1, 0), Position = UDim2.new(0, 42, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "MagicAlay HUB", TextColor3 = Color3.new(1,1,1), TextSize = 14, TextXAlignment = 0})
+
+local AI = N("ImageLabel", Top, {Size = UDim2.new(0, 28, 0, 28), Position = UDim2.new(0, 135, 0.5, -14), BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Fit}) C(AI, UDim.new(1, 0)) S(AI, Color3.fromRGB(130, 70, 220), 1)
+pcall(function() AI.Image = P:GetUserThumbnailAsync(LP.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420) end)
+N("TextLabel", Top, {Size = UDim2.new(0, 220, 1, 0), Position = UDim2.new(0, 170, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = "👤 "..LP.DisplayName.." (@"..LP.Name..")\n🆔 "..LP.UserId.." | 📅 "..LP.AccountAge.." วัน", TextColor3 = Color3.fromRGB(210,200,230), TextSize = 10, TextXAlignment = 0})
+
+local Fps = N("TextLabel", Top, {Size = UDim2.new(0, 75, 0, 24), Position = UDim2.new(1, -120, 0.5, -12), BackgroundColor3 = Color3.fromRGB(22, 14, 38), Font = Enum.Font.GothamBold, Text = "⚡ FPS: --", TextColor3 = Color3.fromRGB(52, 211, 153), TextSize = 10}) C(Fps, UDim.new(0, 6)) S(Fps, Color3.fromRGB(130, 70, 220), 1)
 N("TextButton", Top, {Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(1, -35, 0.5, -12), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "X", TextColor3 = Color3.fromRGB(200, 200, 200), TextSize = 14}).MouseButton1Click:Connect(function() M.Visible = false end)
 
 -- Sidebar & Pages
-local SB = N("ScrollingFrame", M, {Position = UDim2.new(0, 10, 0, 55), Size = UDim2.new(0, 120, 1, -65), BackgroundTransparency = 1}) N("UIListLayout", SB, {Padding = UDim.new(0, 6)})
-local CT = N("Frame", M, {Position = UDim2.new(0, 140, 0, 55), Size = UDim2.new(1, -150, 1, -65), BackgroundTransparency = 1})
+local SB = N("ScrollingFrame", M, {Position = UDim2.new(0, 10, 0, 55), Size = UDim2.new(0, 130, 1, -65), BackgroundTransparency = 1, CanvasSize = UDim2.new(0,0,0,0)}) N("UIListLayout", SB, {Padding = UDim.new(0, 8)})
+local CT = N("Frame", M, {Position = UDim2.new(0, 150, 0, 55), Size = UDim2.new(1, -165, 1, -65), BackgroundTransparency = 1})
 
-local function page(c) local p = N("ScrollingFrame", CT, {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, CanvasSize = UDim2.new(0,0,c,0), Visible = false, ScrollBarThickness = 4}) N("UIListLayout", p, {Padding = UDim.new(0, 8)}) return p end
-local P1, P2, P4, P3 = page(1), page(1.5), page(3.5), page(1.5) P1.Visible = true
-local pages = {P1, P2, P4, P3}
+local function page(n, c) 
+    local p = N("ScrollingFrame", CT, {Name = n, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, CanvasSize = UDim2.new(0,0,c,0), Visible = false, ScrollBarThickness = 4}) 
+    N("UIListLayout", p, {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder}) 
+    return p 
+end
 
-local function tab(txt, target)
-    local b = N("TextButton", SB, {Size = UDim2.new(1,0,0,32), BackgroundColor3 = Color3.fromRGB(32, 22, 55), Font = Enum.Font.GothamSemibold, Text = txt, TextColor3 = Color3.fromRGB(200,200,200), TextSize = 12}) C(b, UDim.new(0, 6))
+local P1, P2, P4, P5, P3 = page("Home", 1.5), page("Player", 1.5), page("Program", 4.5), page("Attack", 1.5), page("Settings", 1.5) 
+P1.Visible = true
+
+local pages = {P1, P2, P3, P4, P5}
+local function tab(txt, ic, target)
+    local b = N("TextButton", SB, {Size = UDim2.new(1,0,0,36), BackgroundColor3 = Color3.fromRGB(32, 22, 55), Text = ""}) C(b, UDim.new(0, 6))
+    if ic ~= "" then N("ImageLabel", b, {Size = UDim2.new(0,18,0,18), Position = UDim2.new(0,10,0.5,-9), BackgroundTransparency = 1, Image = "rbxassetid://"..ic}) end
+    local l = N("TextLabel", b, {Size = ic ~= "" and UDim2.new(1,-34,1,0) or UDim2.new(1,-12,1,0), Position = ic ~= "" and UDim2.new(0,34,0,0) or UDim2.new(0,12,0,0), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = txt, TextColor3 = Color3.fromRGB(200,200,200), TextSize = 13, TextXAlignment = 0})
     b.MouseButton1Click:Connect(function()
         for _, p in ipairs(pages) do p.Visible = false end target.Visible = true
-        for _, c in ipairs(SB:GetChildren()) do if c:IsA("TextButton") then c.BackgroundColor3, c.TextColor3 = Color3.fromRGB(32, 22, 55), Color3.fromRGB(200,200,200) end end
-        b.BackgroundColor3, b.TextColor3 = Color3.fromRGB(95, 45, 180), Color3.new(1,1,1)
+        for _, c in ipairs(SB:GetChildren()) do if c:IsA("TextButton") then c.BackgroundColor3 = Color3.fromRGB(32, 22, 55) c:FindFirstChildOfClass("TextLabel").TextColor3 = Color3.fromRGB(200,200,200) end end
+        b.BackgroundColor3, l.TextColor3 = Color3.fromRGB(95, 45, 180), Color3.new(1,1,1)
     end) return b
 end
-tab("🏠 หน้าแรก", P1).BackgroundColor3 = Color3.fromRGB(95, 45, 180)
-tab("👤 ผู้เล่น", P2) tab("🔑 โปรแกรม", P4) tab("⚙️ ตั้งค่า", P3)
 
--- Home & FPS
-N("TextLabel", P1, {Size = UDim2.new(1,0,0,50), BackgroundColor3 = Color3.fromRGB(38,26,65), Font = Enum.Font.Gotham, Text = "✨ ยินดีต้อนรับสู่ MagicAlay Hub", TextColor3 = Color3.new(1,1,1), TextSize = 13}) C(P1:GetChildren()[#P1:GetChildren()])
+local T1 = tab("Home", "130068439240504", P1) T1.BackgroundColor3, T1.TextLabel.TextColor3 = Color3.fromRGB(95, 45, 180), Color3.new(1,1,1)
+tab("👤 ผู้เล่น", "", P2) tab("🔑 โปรแกรม", "", P4) tab("⚔️ โจมตี", "", P5) tab("⚙️ ตั้งค่า", "", P3)
+
+-- Home & FPS Logic
+local HomeBtn = N("TextButton", P1, {Size = UDim2.new(1,0,0,40), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "✨ MagicAlay HUB", TextColor3 = Color3.new(1,1,1), TextSize = 14, LayoutOrder = 1}) C(HomeBtn)
+local HomeLabel = N("TextLabel", P1, {Size = UDim2.new(1,0,0,70), BackgroundColor3 = Color3.fromRGB(38,26,65), Font = Enum.Font.Gotham, Text = "ศูนย์รวมสคริปต์และชุมชนอย่างเป็นทางการ\nโปรดใช้อย่างระมัดระวัง", TextColor3 = Color3.fromRGB(200,190,225), TextSize = 12, TextWrapped = true, LayoutOrder = 2}) C(HomeLabel)
+
+local fpsConn
 local fc, lt = 0, os.clock()
-local fpsConn = R.RenderStepped:Connect(function() fc = fc + 1 local ct = os.clock() if ct - lt >= 1 then Fps.Text = "⚡ FPS: "..math.floor(fc / (ct - lt)) fc, lt = 0, ct end end)
+fpsConn = R.RenderStepped:Connect(function() fc = fc + 1 local ct = os.clock() if ct - lt >= 1 then Fps.Text = "⚡ FPS: "..math.floor(fc / (ct - lt)) fc, lt = 0, ct end end)
 
--- Player Speed/Jump
+-- Player Section
 local spd, spdVal, jmp, jmpVal, noclip = false, 16, false, 50, false
 local origSpd, origJmp = 16, 50
 
-local function addToggle(p, txt, cb)
-    local b = N("TextButton", p, {Size = UDim2.new(1,0,0,32), BackgroundColor3 = Color3.fromRGB(38,26,65), Font = Enum.Font.GothamSemibold, Text = txt, TextColor3 = Color3.new(1,1,1), TextSize = 12}) C(b)
+local PFC = N("Frame", P2, {Size = UDim2.new(1,0,0,195), BackgroundColor3 = Color3.fromRGB(38, 26, 65), LayoutOrder = 1}) C(PFC)
+N("TextLabel", PFC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "⚙️ 👤 Player", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(PFC, "ตั้งค่าตัวละคร", "ปรับ WalkSpeed และ JumpPower ด้วยการพิมพ์หรือลากสไลเดอร์ พร้อม Noclip")
+
+local function toggleSlider(parent, title, ph, min, max, y, cb)
+    local r = N("Frame", parent, {Size = UDim2.new(1,-24,0,45), Position = UDim2.new(0,12,0,y), BackgroundColor3 = Color3.fromRGB(28, 18, 48)}) C(r, UDim.new(0, 6))
+    N("TextLabel", r, {Size = UDim2.new(0.25,0,1,0), Position = UDim2.new(0,10,0,0), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = title, TextColor3 = Color3.fromRGB(220,220,220), TextSize = 12, TextXAlignment = 0})
+    local val = ph and tonumber(ph:match("^(%d+)")) or 0
+    if ph then
+        local sb = N("Frame", r, {Size = UDim2.new(0, 120, 0, 6), Position = UDim2.new(1, -235, 0.5, -3), BackgroundColor3 = Color3.fromRGB(48,32,85)}) C(sb, UDim.new(1, 0))
+        local sf = N("Frame", sb, {Size = UDim2.new((val - min)/(max - min), 0, 1, 0), BackgroundColor3 = Color3.fromRGB(130, 70, 220)}) C(sf, UDim.new(1, 0))
+        local kn = N("Frame", sb, {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new((val - min)/(max - min), -8, 0.5, -8), BackgroundColor3 = Color3.new(1,1,1), ZIndex = 5}) C(kn, UDim.new(1, 0)) S(kn, Color3.fromRGB(130, 70, 220), 2)
+        local sbtn = N("TextButton", sb, {Size = UDim2.new(1, 16, 1, 16), Position = UDim2.new(0, -8, 0, -8), BackgroundTransparency = 1, Text = "", ZIndex = 6})
+        local tb = N("TextBox", r, {Size = UDim2.new(0,45,0,26), Position = UDim2.new(1,-105,0.5,-13), BackgroundColor3 = Color3.fromRGB(48,32,85), Font = Enum.Font.Gotham, PlaceholderText = ph, Text = tostring(val), TextColor3 = Color3.new(1,1,1), TextSize = 11}) C(tb, UDim.new(0, 6))
+        
+        local function upd(n, inp)
+            val = math.clamp(n, min, max) local pct = (val - min)/(max - min)
+            if not inp then tb.Text = tostring(val) end sf.Size, kn.Position = UDim2.new(pct, 0, 1, 0), UDim2.new(pct, -8, 0.5, -8)
+            if title:match("ความเร็ว") then spdVal = val elseif title:match("กระโดด") then jmpVal = val end
+        end
+        local drag = false
+        sbtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true end end)
+        sbtn.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end end)
+        U.InputChanged:Connect(function(i) if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then upd(math.floor(min + (max - min) * math.clamp((i.Position.X - sb.AbsolutePosition.X) / sb.AbsoluteSize.X, 0, 1)), false) end end)
+        tb.FocusLost:Connect(function() local n = tonumber(tb.Text) if n then upd(n, true) end end)
+    end
+    local tr = N("TextButton", r, {Size = UDim2.new(0,44,0,26), Position = UDim2.new(1,-50,0.5,-13), BackgroundColor3 = Color3.fromRGB(55,40,85), Text = "", AutoButtonColor = false}) C(tr, UDim.new(1, 0))
+    local tk = N("Frame", tr, {Size = UDim2.new(0,22,0,22), Position = UDim2.new(0,2,0.5,-11), BackgroundColor3 = Color3.new(1,1,1)}) C(tk, UDim.new(1, 0))
     local st = false
-    b.MouseButton1Click:Connect(function() st = not st b.BackgroundColor3 = st and Color3.fromRGB(52,199,89) or Color3.fromRGB(38,26,65) cb(st) end)
+    tr.MouseButton1Click:Connect(function()
+        st = not st
+        T:Create(tk, TweenInfo.new(0.2), {Position = st and UDim2.new(1,-24,0.5,-11) or UDim2.new(0,2,0.5,-11)}):Play()
+        T:Create(tr, TweenInfo.new(0.2), {BackgroundColor3 = st and Color3.fromRGB(52,199,89) or Color3.fromRGB(55,40,85)}):Play()
+        cb(st, val)
+    end)
 end
 
-addToggle(P2, "⚡ เปิดความเร็ว (WalkSpeed: 50)", function(s) spd, spdVal = s, 50 end)
-addToggle(P2, "🌪️ เปิดกระโดดสูง (JumpPower: 120)", function(s) jmp, jmpVal = s, 120 end)
-addToggle(P2, "👻 ทะลุกำแพง (Noclip)", function(s) noclip = s end)
+toggleSlider(PFC, "⚡ความเร็ว", "16-200", 16, 200, 36, function(o, v)
+    spd, spdVal = o, v
+    local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
+    if hum then
+        if o then origSpd = hum.WalkSpeed else hum.WalkSpeed = origSpd end
+    end
+end)
 
--- Anti-AFK & ShiftLock
+toggleSlider(PFC, "🌪️กระโดดสูง", "50-500", 50, 500, 86, function(o, v)
+    jmp, jmpVal = o, v
+    local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
+    if hum then
+        if o then origJmp = hum.JumpPower else hum.JumpPower = origJmp end
+    end
+end)
+
+toggleSlider(PFC, "👻 ทะลุกำแพง", nil, 0, 0, 136, function(o) noclip = o end)
+
+-- Program Section
+local ProgramHeader = N("TextButton", P4, {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Color3.fromRGB(95, 45, 180), Font = Enum.Font.GothamSemibold, Text = "🔑 ระบบและโปรแกรมเสริม", TextColor3 = Color3.new(1, 1, 1), TextSize = 14, LayoutOrder = 1}) C(ProgramHeader)
+
+-- Anti-AFK
 local aConn = nil
-addToggle(P4, "🛡️ ระบบกันหลุด (Anti-AFK)", function(s)
-    if s then aConn = LP.Idled:Connect(function() pcall(function() V:CaptureController() V:ClickButton2(Vector2.new()) end) end)
+local AAC = N("Frame", P4, {Size = UDim2.new(1,0,0,90), BackgroundColor3 = Color3.fromRGB(38, 26, 65), LayoutOrder = 2}) C(AAC)
+N("TextLabel", AAC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🛡️ ระบบกันหลุด (Anti-AFK)", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(AAC, "ระบบกันหลุด", "ป้องกันไม่ให้เกมเตะคุณเมื่อ AFK")
+toggleSlider(AAC, "ระบบกันหลุด", nil, 0, 0, 36, function(o)
+    if o then aConn = LP.Idled:Connect(function() pcall(function() V:CaptureController() V:ClickButton2(Vector2.new()) end) end)
     elseif aConn then aConn:Disconnect() end
 end)
 
-local shiftLockOn, isSLActive = false, false
-local SLBtn = N("TextButton", SG, {Size = UDim2.new(0,42,0,42), Position = UDim2.new(1,-60,1,-120), BackgroundColor3 = Color3.fromRGB(25,18,45), Text = "🔒", TextSize = 16, Visible = false, Active = true, Draggable = true}) C(SLBtn, UDim.new(1,0)) S(SLBtn)
-addToggle(P4, "🔒 เปิดปุ่มชิปล็อค (ShiftLock)", function(s) shiftLockOn, SLBtn.Visible = s, s end)
+-- ShiftLock
+local shiftLockFeatureOn, isShiftLockActive = false, false
+local SLC = N("Frame", P4, {Size = UDim2.new(1,0,0,90), BackgroundColor3 = Color3.fromRGB(38, 26, 65), LayoutOrder = 3}) C(SLC)
+N("TextLabel", SLC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🔒 ชิปล็อคหน้าจอ (ShiftLock)", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(SLC, "ชิปล็อคหน้าจอ", "เปิดใช้งานปุ่ม ShiftLock ที่มุมขวาล่างเพื่อล็อคมุมมองและตัวละคร")
 
-SLBtn.MouseButton1Click:Connect(function()
-    if not shiftLockOn then return end
-    isSLActive = not isSLActive
-    SLBtn.BackgroundColor3 = isSLActive and Color3.fromRGB(95,45,180) or Color3.fromRGB(25,18,45)
-    local h = LP.Character and LP.Character:FindFirstChild("Humanoid")
-    if h then h.AutoRotate = not isSLActive end
+local SLMainBtn = N("ImageButton", SG, {
+    Size = UDim2.new(0, 48, 0, 48),
+    Position = UDim2.new(1, -75, 1, -140),
+    BackgroundColor3 = Color3.fromRGB(25, 18, 45),
+    Visible = false,
+    ZIndex = 50,
+    Draggable = true,
+    Active = true,
+    Image = ""
+})
+C(SLMainBtn, UDim.new(1, 0)) S(SLMainBtn, Color3.fromRGB(130, 70, 220), 2)
+local SLLabel = N("TextLabel", SLMainBtn, {
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBold,
+    Text = "🔒",
+    TextColor3 = Color3.new(1,1,1),
+    TextSize = 18,
+    ZIndex = 51
+})
+
+toggleSlider(SLC, "เปิดปุ่มชิปล็อค", nil, 0, 0, 36, function(o)
+    shiftLockFeatureOn = o
+    SLMainBtn.Visible = o
+    if not o and isShiftLockActive then
+        isShiftLockActive = false
+        SLMainBtn.BackgroundColor3 = Color3.fromRGB(25, 18, 45)
+        local char = LP.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        if hum then hum.AutoRotate = true end
+    end
 end)
 
--- Target System (ค้นหาชื่อย่อได้)
-local selP = ""
-local TargetFrame = N("Frame", P4, {Size = UDim2.new(1,0,0,140), BackgroundColor3 = Color3.fromRGB(38,26,65)}) C(TargetFrame)
-local TargetStatus = N("TextLabel", TargetFrame, {Size = UDim2.new(1,-16,0,20), Position = UDim2.new(0,8,0,6), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🎯 ผู้เล่นที่เลือก: ยังไม่ได้เลือก", TextColor3 = Color3.fromRGB(200,200,200), TextSize = 11, TextXAlignment = 0})
-local SearchBox = N("TextBox", TargetFrame, {Size = UDim2.new(1,-16,0,28), Position = UDim2.new(0,8,0,28), BackgroundColor3 = Color3.fromRGB(28,18,48), Font = Enum.Font.Gotham, PlaceholderText = "🔍 พิมพ์ชื่อย่อผู้เล่น...", Text = "", TextColor3 = Color3.new(1,1,1), TextSize = 11}) C(SearchBox)
+SLMainBtn.MouseButton1Click:Connect(function()
+    if not shiftLockFeatureOn then return end
+    isShiftLockActive = not isShiftLockActive
+    local char = LP.Character
+    local hum = char and char:FindFirstChild("Humanoid")
+    if hum then hum.AutoRotate = not isShiftLockActive end
+    if isShiftLockActive then
+        SLMainBtn.BackgroundColor3 = Color3.fromRGB(95, 45, 180)
+        SLLabel.TextColor3 = Color3.fromRGB(52, 211, 153)
+    else
+        SLMainBtn.BackgroundColor3 = Color3.fromRGB(25, 18, 45)
+        SLLabel.TextColor3 = Color3.new(1,1,1)
+    end
+end)
 
-SearchBox.Changed:Connect(function(prop)
-    if prop == "Text" then
-        local q = SearchBox.Text:lower()
-        if q == "" then 
-            selP = "" 
-            TargetStatus.Text = "🎯 ผู้เล่นที่เลือก: ยังไม่ได้เลือก"
-            return 
-        end
-        local found = false
+-- ESP & Target System
+local espOn, espC = false, {}
+local function remESP(p) if espC[p] then if espC[p].H then espC[p].H:Destroy() end if espC[p].B then espC[p].B:Destroy() end espC[p] = nil end end
+local function addESP(p)
+    if p == LP then return end
+    local function sc(c)
+        remESP(p) if not espOn then return end
+        task.spawn(function()
+            local hd = c:WaitForChild("Head", 3) if not hd or not c:FindFirstChild("HumanoidRootPart") then return end
+            espC[p] = {
+                H = N("Highlight", c, {Name = "ESP_H", Adornee = c, FillColor = Color3.fromRGB(130, 70, 220), OutlineColor = Color3.new(1,1,1), FillTransparency = 0.5}),
+                B = N("BillboardGui", hd, {Name = "ESP_B", AlwaysOnTop = true, Size = UDim2.new(0, 200, 0, 50), StudsOffset = Vector3.new(0, 2.5, 0)})
+            }
+            N("TextLabel", espC[p].B, {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Text = p.DisplayName.." (@"..p.Name..")", TextColor3 = Color3.new(1,1,1), TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(130, 70, 220), Font = Enum.Font.GothamBold, TextSize = 13})
+        end)
+    end
+    if p.Character then sc(p.Character) end p.CharacterAdded:Connect(sc)
+end
+
+P.PlayerAdded:Connect(function(p) if espOn then addESP(p) end end) P.PlayerRemoving:Connect(remESP)
+
+local CC = N("Frame", P4, {Size = UDim2.new(1,0,0,270), BackgroundColor3 = Color3.fromRGB(38, 26, 65), LayoutOrder = 4, ClipsDescendants = false}) C(CC)
+N("TextLabel", CC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "👁️‍🗨️ สแกน & ดูผู้เล่น / วาร์ป", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(CC, "สแกน & ส่อง/วาร์ป", "พิมพ์ชื่อหรือเลือกผู้เล่นเพื่อส่องดู หรือวาร์ปไปหาได้ทันที")
+toggleSlider(CC, "สแกนผู้เล่น (ESP)", nil, 0, 0, 36, function(o) espOn = o for _, p in ipairs(P:GetPlayers()) do if o then addESP(p) else remESP(p) end end end)
+
+local selP = ""
+
+-- Search TextBox
+local SearchBox = N("TextBox", CC, {
+    Size = UDim2.new(1, -24, 0, 32),
+    Position = UDim2.new(0, 12, 0, 88),
+    BackgroundColor3 = Color3.fromRGB(28, 18, 48),
+    Font = Enum.Font.Gotham,
+    PlaceholderText = "🔍 พิมพ์ชื่อผู้เล่นเพื่อค้นหา...",
+    Text = "",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 12
+}) C(SearchBox, UDim.new(0, 6))
+
+-- Dropdown Button
+local DB = N("TextButton", CC, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,125), BackgroundColor3 = Color3.fromRGB(48,32,85), Font = Enum.Font.GothamSemibold, Text = "📌 เลือกลิสต์ผู้เล่นทั้งหมด...", TextColor3 = Color3.fromRGB(200,200,200), TextSize = 11}) C(DB, UDim.new(0, 6))
+local DF = N("ScrollingFrame", CC, {Size = UDim2.new(1,-24,0,90), Position = UDim2.new(0,12,0,160), BackgroundColor3 = Color3.fromRGB(30,20,50), Visible = false, ZIndex = 20}) C(DF, UDim.new(0, 6)) N("UIListLayout", DF, {Padding = UDim.new(0,2)})
+
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local query = SearchBox.Text:lower()
+    if query ~= "" and query ~= "🔍 พิมพ์ชื่อผู้เล่นเพื่อค้นหา..." then
         for _, p in ipairs(P:GetPlayers()) do
-            if p ~= LP and (p.Name:lower():find(q, 1, true) or p.DisplayName:lower():find(q, 1, true)) then 
-                selP = p.Name 
-                TargetStatus.Text = "🎯 เจอแล้ว: " .. p.DisplayName .. " (@" .. p.Name .. ")"
-                found = true
-                break 
+            if p ~= LP and (p.Name:lower():find(query) or p.DisplayName:lower():find(query)) then
+                selP = p.Name
+                DB.Text = "เลือกแล้ว: "..p.DisplayName.." (@"..p.Name..")"
+                break
             end
-        end
-        if not found then
-            selP = ""
-            TargetStatus.Text = "❌ ไม่พบผู้เล่นชื่อนี้"
         end
     end
 end)
 
-local function getT() return selP ~= "" and P:FindFirstChild(selP) end
-local ViewBtn = N("TextButton", TargetFrame, {Size = UDim2.new(0.46,0,0,28), Position = UDim2.new(0,8,0,64), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "👁️ ส่องดู", TextColor3 = Color3.new(1,1,1), TextSize = 11}) C(ViewBtn)
-ViewBtn.MouseButton1Click:Connect(function() local t = getT() if t and t.Character and t.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = t.Character.Humanoid end end)
+DB.MouseButton1Click:Connect(function()
+    for _, c in ipairs(DF:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+    for _, p in ipairs(P:GetPlayers()) do
+        if p ~= LP then
+            N("TextButton", DF, {Size = UDim2.new(1,0,0,25), BackgroundColor3 = Color3.fromRGB(40,28,70), Font = Enum.Font.Gotham, Text = p.DisplayName.." (@"..p.Name..")", TextColor3 = Color3.new(1,1,1), TextSize = 11, ZIndex = 21}).MouseButton1Click:Connect(function() 
+                selP = p.Name 
+                SearchBox.Text = p.Name
+                DB.Text = "เลือกแล้ว: "..p.DisplayName 
+                DF.Visible = false 
+            end)
+        end
+    end
+    DF.CanvasSize, DF.Visible = UDim2.new(0, 0, 0, #P:GetPlayers() * 27), not DF.Visible
+end)
 
-local UnviewBtn = N("TextButton", TargetFrame, {Size = UDim2.new(0.46,0,0,28), Position = UDim2.new(0.52,0,0,64), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ยกเลิก", TextColor3 = Color3.new(1,1,1), TextSize = 11}) C(UnviewBtn)
+local function getTarget() return selP ~= "" and P:FindFirstChild(selP) end
+
+local ViewBtn = N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0,12,0,162), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "👁️ ส่องดู", TextColor3 = Color3.new(1,1,1), TextSize = 12}) C(ViewBtn, UDim.new(0, 6))
+ViewBtn.MouseButton1Click:Connect(function() local t = getTarget() if t and t.Character and t.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = t.Character.Humanoid end end)
+
+local UnviewBtn = N("TextButton", CC, {Size = UDim2.new(0.47,0,0,32), Position = UDim2.new(0.53,0,0,162), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ยกเลิกส่อง", TextColor3 = Color3.new(1,1,1), TextSize = 12}) C(UnviewBtn, UDim.new(0, 6))
 UnviewBtn.MouseButton1Click:Connect(function() if LP.Character and LP.Character:FindFirstChild("Humanoid") then Cam.CameraSubject = LP.Character.Humanoid end end)
 
-local TpBtn = N("TextButton", TargetFrame, {Size = UDim2.new(1,-16,0,28), Position = UDim2.new(0,8,0,98), BackgroundColor3 = Color3.fromRGB(52,150,220), Font = Enum.Font.GothamSemibold, Text = "🌀 วาร์ปไปหา", TextColor3 = Color3.new(1,1,1), TextSize = 11}) C(TpBtn)
-TpBtn.MouseButton1Click:Connect(function() local t = getT() if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(2,0,0) end end)
+local TpBtn = N("TextButton", CC, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,200), BackgroundColor3 = Color3.fromRGB(52,150,220), Font = Enum.Font.GothamSemibold, Text = "🌀 วาร์ปไปหาผู้เล่น", TextColor3 = Color3.new(1,1,1), TextSize = 12}) C(TpBtn, UDim.new(0, 6))
+TpBtn.MouseButton1Click:Connect(function() local t = getTarget() if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(2, 0, 0) end end)
 
--- Settings (Hide & Unload)
-N("TextButton", P3, {Size = UDim2.new(1,0,0,32), BackgroundColor3 = Color3.fromRGB(55,40,85), Font = Enum.Font.GothamSemibold, Text = "👁️ ซ่อน UI", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function() M.Visible = false end) C(P3:GetChildren()[#P3:GetChildren()])
+-- Attack Header
+local AtkHeader = N("TextButton", P5, {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Color3.fromRGB(95, 45, 180), Font = Enum.Font.GothamSemibold, Text = "⚔️ ระบบโจมตี", TextColor3 = Color3.new(1, 1, 1), TextSize = 14, LayoutOrder = 1}) C(AtkHeader)
+
+-- Settings Section
+local SetHeader = N("TextButton", P3, {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Color3.fromRGB(95, 45, 180), Font = Enum.Font.GothamSemibold, Text = "⚙️ ตั้งค่าระบบและ UI", TextColor3 = Color3.new(1, 1, 1), TextSize = 14, LayoutOrder = 1}) C(SetHeader)
+
+local STC = N("Frame", P3, {Size = UDim2.new(1,0,0,150), BackgroundColor3 = Color3.fromRGB(38, 26, 65), LayoutOrder = 2}) C(STC)
+N("TextLabel", STC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🖥️ การแสดงผล UI & ปิดการใช้งาน", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(STC, "จัดการ UI", "สามารถซ่อน/แสดงเมนูหลัก หรือทำการลบสคริปต์ออกจากเกมอย่างสมบูรณ์ได้ที่นี่")
+
+local HideBtn = N("TextButton", STC, {
+    Size = UDim2.new(1, -24, 0, 36),
+    Position = UDim2.new(0, 12, 0, 42),
+    BackgroundColor3 = Color3.fromRGB(55, 40, 85),
+    Font = Enum.Font.GothamSemibold,
+    Text = "👁️ ซ่อนหน้าต่าง UI (กดปุ่มสัญลักษณ์วงกลมเพื่อเปิดใหม่)",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 11
+}) C(HideBtn, UDim.new(0, 6))
+HideBtn.MouseButton1Click:Connect(function()
+    M.Visible = false
+end)
+
+local UnloadBtn = N("TextButton", STC, {
+    Size = UDim2.new(1, -24, 0, 36),
+    Position = UDim2.new(0, 12, 0, 90),
+    BackgroundColor3 = Color3.fromRGB(180, 45, 45),
+    Font = Enum.Font.GothamSemibold,
+    Text = "❌ ปิดการใช้งานและลบสคริปต์ (Unload Script)",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 12
+}) C(UnloadBtn, UDim.new(0, 6))
 
 local isUnloaded = false
-N("TextButton", P3, {Size = UDim2.new(1,0,0,32), BackgroundColor3 = Color3.fromRGB(180,45,45), Font = Enum.Font.GothamSemibold, Text = "❌ ลบสคริปต์ (Unload)", TextColor3 = Color3.new(1,1,1), TextSize = 12}).MouseButton1Click:Connect(function()
+UnloadBtn.MouseButton1Click:Connect(function()
     isUnloaded = true
-    if fpsConn then fpsConn:Disconnect() end
+    local char = LP.Character
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            hum.WalkSpeed = origSpd
+            hum.JumpPower = origJmp
+            hum.AutoRotate = true
+        end
+    end
     if aConn then aConn:Disconnect() end
+    if fpsConn then fpsConn:Disconnect() end
+    if Blur then Blur:Destroy() end
+    for p, _ in pairs(espC) do remESP(p) end
     SG:Destroy()
-end) C(P3:GetChildren()[#P3:GetChildren()])
+end)
 
 -- Main Loop
 R.Stepped:Connect(function()
@@ -149,14 +452,50 @@ R.Stepped:Connect(function()
     if char then
         if noclip then for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
         local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            if spd then hum.WalkSpeed = spdVal end
-            if jmp then hum.JumpPower = jmpVal end
+        if hum then 
+            if spd then hum.WalkSpeed = spdVal end 
+            if jmp then hum.JumpPower = jmpVal end 
         end
-        if shiftLockOn and isSLActive and char:FindFirstChild("HumanoidRootPart") then
+        
+        if shiftLockFeatureOn and isShiftLockActive and char:FindFirstChild("HumanoidRootPart") then
             local hrp = char.HumanoidRootPart
             local _, y = Cam.CFrame:ToEulerAnglesYXZ()
             hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, y, 0)
         end
     end
+end)
+
+---------------------------------------------------------
+-- 🚀 FULLSCREEN LOADING ANIMATION LOOP (1% -> 100%)
+---------------------------------------------------------
+task.spawn(function()
+    for i = 1, 100 do
+        LoadStatus.Text = "กำลังดาวน์โหลด... " .. i .. "%"
+        T:Create(BarFill, TweenInfo.new(0.025, Enum.EasingStyle.Linear), {Size = UDim2.new(i / 100, 0, 1, 0)}):Play()
+        task.wait(0.025)
+    end
+    
+    LoadStatus.Text = "ดาวน์โหลดเสร็จสิ้น!"
+    task.wait(0.4)
+    
+    -- Fade Out Animation (ค่อยๆ จางหายไป)
+    T:Create(Blur, TweenInfo.new(0.5), {Size = 0}):Play()
+    T:Create(LoadBackground, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    
+    for _, desc in ipairs(LoadBackground:GetDescendants()) do
+        if desc:IsA("TextLabel") then
+            T:Create(desc, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+        elseif desc:IsA("ImageLabel") then
+            T:Create(desc, TweenInfo.new(0.5), {ImageTransparency = 1}):Play()
+        elseif desc:IsA("Frame") then
+            T:Create(desc, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+        elseif desc:IsA("UIStroke") then
+            T:Create(desc, TweenInfo.new(0.5), {Transparency = 1}):Play()
+        end
+    end
+    
+    task.wait(0.5)
+    Blur:Destroy()
+    LoadBackground:Destroy()
+    M.Visible = true -- เปิดหน้าต่างหลักอัตโนมัติ
 end)
