@@ -1,4 +1,4 @@
--- MagicAlay Hub UI Script (Mini Edition + Fullscreen Loading Screen)
+-- MagicAlay Hub UI Script (Mini Edition + Fullscreen Loading Clean + Dev Credits)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
 
@@ -24,44 +24,40 @@ local function C(p, r) return N("UICorner", p, {CornerRadius = r or UDim.new(0, 
 local function S(p, c, t) return N("UIStroke", p, {Color = c or Color3.fromRGB(130, 70, 220), Thickness = t or 1.5}) end
 
 ---------------------------------------------------------
--- ⏳ FULLSCREEN LOADING SCREEN SYSTEM
+-- ⏳ FULLSCREEN LOADING SCREEN SYSTEM (FULL COVER)
 ---------------------------------------------------------
 local LoadBackground = N("Frame", SG, {
-    Size = UDim2.new(1, 0, 1, 0),
-    Position = UDim2.new(0, 0, 0, 0),
-    BackgroundColor3 = Color3.fromRGB(12, 8, 22),
+    Size = UDim2.new(1, 100, 1, 100),
+    Position = UDim2.new(0, -50, 0, -50),
+    BackgroundColor3 = Color3.fromRGB(10, 6, 18),
     BackgroundTransparency = 0,
-    ZIndex = 999,
+    ZIndex = 9999,
     Active = true
 })
 
--- Blur Effect ด้านหลัง
 local Lighting = game:GetService("Lighting")
 local Blur = Instance.new("BlurEffect")
-Blur.Size = 20
+Blur.Size = 25
 Blur.Parent = Lighting
 
--- Card ตรงกลางหน้าจอ
 local LoadCard = N("Frame", LoadBackground, {
-    Size = UDim2.new(0, 360, 0, 220),
-    Position = UDim2.new(0.5, -180, 0.5, -110),
+    Size = UDim2.new(0, 380, 0, 230),
+    Position = UDim2.new(0.5, -190, 0.5, -115),
     BackgroundColor3 = Color3.fromRGB(22, 15, 38),
-    ZIndex = 1000
+    ZIndex = 10000
 })
 C(LoadCard, UDim.new(0, 16))
 S(LoadCard, Color3.fromRGB(140, 75, 235), 2.5)
 
--- Hub Logo / Icon
-local LoadIcon = N("ImageLabel", LoadCard, {
+N("ImageLabel", LoadCard, {
     Size = UDim2.new(0, 65, 0, 65),
     Position = UDim2.new(0.5, -32, 0, 20),
     BackgroundTransparency = 1,
     Image = "rbxassetid://134610671303702",
-    ZIndex = 1001
+    ZIndex = 10001
 })
 
--- Hub Title
-local LoadTitle = N("TextLabel", LoadCard, {
+N("TextLabel", LoadCard, {
     Size = UDim2.new(1, 0, 0, 30),
     Position = UDim2.new(0, 0, 0, 92),
     BackgroundTransparency = 1,
@@ -69,10 +65,9 @@ local LoadTitle = N("TextLabel", LoadCard, {
     Text = "MagicAlay HUB",
     TextColor3 = Color3.fromRGB(255, 255, 255),
     TextSize = 22,
-    ZIndex = 1001
+    ZIndex = 10001
 })
 
--- Status Text (%)
 local LoadStatus = N("TextLabel", LoadCard, {
     Size = UDim2.new(1, 0, 0, 20),
     Position = UDim2.new(0, 0, 0, 126),
@@ -81,27 +76,24 @@ local LoadStatus = N("TextLabel", LoadCard, {
     Text = "กำลังดาวน์โหลด... 0%",
     TextColor3 = Color3.fromRGB(200, 185, 235),
     TextSize = 13,
-    ZIndex = 1001
+    ZIndex = 10001
 })
 
--- Progress Bar Background
 local BarBackground = N("Frame", LoadCard, {
     Size = UDim2.new(1, -50, 0, 12),
     Position = UDim2.new(0, 25, 0, 158),
     BackgroundColor3 = Color3.fromRGB(38, 26, 65),
-    ZIndex = 1001
+    ZIndex = 10001
 })
 C(BarBackground, UDim.new(1, 0))
 
--- Progress Bar Fill (หลอดโหลด)
 local BarFill = N("Frame", BarBackground, {
     Size = UDim2.new(0, 0, 1, 0),
     BackgroundColor3 = Color3.fromRGB(150, 80, 255),
-    ZIndex = 1002
+    ZIndex = 10002
 })
 C(BarFill, UDim.new(1, 0))
 
--- Credit Footer
 N("TextLabel", LoadCard, {
     Size = UDim2.new(1, 0, 0, 20),
     Position = UDim2.new(0, 0, 1, -22),
@@ -110,7 +102,7 @@ N("TextLabel", LoadCard, {
     Text = "Official Script System",
     TextColor3 = Color3.fromRGB(120, 100, 150),
     TextSize = 10,
-    ZIndex = 1001
+    ZIndex = 10001
 })
 
 ---------------------------------------------------------
@@ -158,7 +150,7 @@ local function page(n, c)
     return p 
 end
 
-local P1, P2, P4, P5, P3 = page("Home", 1.5), page("Player", 1.5), page("Program", 4.5), page("Attack", 1.5), page("Settings", 1.5) 
+local P1, P2, P4, P5, P3 = page("Home", 1.8), page("Player", 1.5), page("Program", 4.5), page("Attack", 1.5), page("Settings", 1.5) 
 P1.Visible = true
 
 local pages = {P1, P2, P3, P4, P5}
@@ -176,9 +168,14 @@ end
 local T1 = tab("Home", "130068439240504", P1) T1.BackgroundColor3, T1.TextLabel.TextColor3 = Color3.fromRGB(95, 45, 180), Color3.new(1,1,1)
 tab("👤 ผู้เล่น", "", P2) tab("🔑 โปรแกรม", "", P4) tab("⚔️ โจมตี", "", P5) tab("⚙️ ตั้งค่า", "", P3)
 
--- Home & FPS Logic
+-- Home & FPS Logic + Dev Credits
 local HomeBtn = N("TextButton", P1, {Size = UDim2.new(1,0,0,40), BackgroundColor3 = Color3.fromRGB(95,45,180), Font = Enum.Font.GothamSemibold, Text = "✨ MagicAlay HUB", TextColor3 = Color3.new(1,1,1), TextSize = 14, LayoutOrder = 1}) C(HomeBtn)
 local HomeLabel = N("TextLabel", P1, {Size = UDim2.new(1,0,0,70), BackgroundColor3 = Color3.fromRGB(38,26,65), Font = Enum.Font.Gotham, Text = "ศูนย์รวมสคริปต์และชุมชนอย่างเป็นทางการ\nโปรดใช้อย่างระมัดระวัง", TextColor3 = Color3.fromRGB(200,190,225), TextSize = 12, TextWrapped = true, LayoutOrder = 2}) C(HomeLabel)
+
+-- ช่องเครดิตผู้พัฒนา
+local DevBox = N("Frame", P1, {Size = UDim2.new(1,0,0,65), BackgroundColor3 = Color3.fromRGB(38,26,65), LayoutOrder = 3}) C(DevBox)
+N("TextLabel", DevBox, {Size = UDim2.new(1,-20,0,22), Position = UDim2.new(0,10,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "🛠️ ผู้พัฒนา (Developers)", TextColor3 = Color3.fromRGB(230,220,250), TextSize = 12, TextXAlignment = 0})
+N("TextLabel", DevBox, {Size = UDim2.new(1,-20,0,25), Position = UDim2.new(0,10,0,32), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "Dev by sky, Aek, Saisansk, Weir", TextColor3 = Color3.fromRGB(52, 211, 153), TextSize = 12, TextXAlignment = 0})
 
 local fpsConn
 local fc, lt = 0, os.clock()
@@ -338,7 +335,6 @@ toggleSlider(CC, "สแกนผู้เล่น (ESP)", nil, 0, 0, 36, funct
 
 local selP = ""
 
--- Search TextBox
 local SearchBox = N("TextBox", CC, {
     Size = UDim2.new(1, -24, 0, 32),
     Position = UDim2.new(0, 12, 0, 88),
@@ -350,7 +346,6 @@ local SearchBox = N("TextBox", CC, {
     TextSize = 12
 }) C(SearchBox, UDim.new(0, 6))
 
--- Dropdown Button
 local DB = N("TextButton", CC, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,125), BackgroundColor3 = Color3.fromRGB(48,32,85), Font = Enum.Font.GothamSemibold, Text = "📌 เลือกลิสต์ผู้เล่นทั้งหมด...", TextColor3 = Color3.fromRGB(200,200,200), TextSize = 11}) C(DB, UDim.new(0, 6))
 local DF = N("ScrollingFrame", CC, {Size = UDim2.new(1,-24,0,90), Position = UDim2.new(0,12,0,160), BackgroundColor3 = Color3.fromRGB(30,20,50), Visible = false, ZIndex = 20}) C(DF, UDim.new(0, 6)) N("UIListLayout", DF, {Padding = UDim.new(0,2)})
 
@@ -478,7 +473,6 @@ task.spawn(function()
     LoadStatus.Text = "ดาวน์โหลดเสร็จสิ้น!"
     task.wait(0.4)
     
-    -- Fade Out Animation (ค่อยๆ จางหายไป)
     T:Create(Blur, TweenInfo.new(0.5), {Size = 0}):Play()
     T:Create(LoadBackground, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     
@@ -497,5 +491,5 @@ task.spawn(function()
     task.wait(0.5)
     Blur:Destroy()
     LoadBackground:Destroy()
-    M.Visible = true -- เปิดหน้าต่างหลักอัตโนมัติ
+    M.Visible = true
 end)
