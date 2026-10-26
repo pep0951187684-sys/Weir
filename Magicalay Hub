@@ -1,4 +1,4 @@
--- MagicAlay Hub UI Script (Mini Edition + Fullscreen Loading Clean + Dev Credits)
+-- MagicAlay Hub UI Script (Mini Edition + Fullscreen Loading + Dev Credits + UI Sound Effects)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
 
@@ -11,12 +11,30 @@ SG.Name = "MagicAlayHub"
 SG.ResetOnSpawn = false
 SG.Parent = CG
 
+-- 🔊 ระบบสร้างเสียงคลิก UI อัตโนมัติ
+local ClickSound = Instance.new("Sound")
+ClickSound.SoundId = "rbxassetid://9069179075"
+ClickSound.Volume = 0.5
+ClickSound.Parent = SG
+
+local function playClick()
+    ClickSound:Play()
+end
+
 local function N(c, p, pr) 
     local o = Instance.new(c)
     for k, v in pairs(pr or {}) do 
         o[k] = v 
     end 
     o.Parent = p
+    
+    -- ถ้าเป็นปุ่มหรือช่องพิมพ์ ให้ผูกเสียงคลิกอัตโนมัติ
+    if o:IsA("TextButton") or o:IsA("ImageButton") then
+        o.MouseButton1Click:Connect(playClick)
+    elseif o:IsA("TextBox") then
+        o.Focused:Connect(playClick)
+    end
+    
     return o 
 end
 
@@ -206,7 +224,7 @@ local function toggleSlider(parent, title, ph, min, max, y, cb)
             if title:match("ความเร็ว") then spdVal = val elseif title:match("กระโดด") then jmpVal = val end
         end
         local drag = false
-        sbtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true end end)
+        sbtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true playClick() end end)
         sbtn.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end end)
         U.InputChanged:Connect(function(i) if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then upd(math.floor(min + (max - min) * math.clamp((i.Position.X - sb.AbsolutePosition.X) / sb.AbsoluteSize.X, 0, 1)), false) end end)
         tb.FocusLost:Connect(function() local n = tonumber(tb.Text) if n then upd(n, true) end end)
