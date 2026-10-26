@@ -1,4 +1,4 @@
--- MagicAlay Hub UI Script (Mini Edition + iOS Style + Split Player Tools + Single View Toggle)
+-- MagicAlay Hub UI Script (Mini Edition + iOS Style + Separated Spectate & Teleport)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
 
@@ -20,7 +20,7 @@ local function N(c, p, pr)
     return o 
 end
 
--- iOS Style Rounded Corner (ขอบมนโค้งสไตล์ iOS)
+-- iOS Style Rounded Corner
 local function C(p, r) return N("UICorner", p, {CornerRadius = r or UDim.new(0, 10)}) end
 local function S(p, c, t) return N("UIStroke", p, {Color = c or Color3.fromRGB(130, 70, 220), Thickness = t or 1.5}) end
 
@@ -124,7 +124,7 @@ local function addHelp(p, title, text)
     b.MouseButton1Click:Connect(function() MTitle.Text, MDesc.Text, Modal.Visible = "📌 "..title, text, true end)
 end
 
--- Main Window & Toggle (iOS Style Translucent Glass)
+-- Main Window & Toggle
 local TB = N("ImageButton", SG, {Position = UDim2.new(0.5, -25, 0, 20), Size = UDim2.new(0, 50, 0, 50), Image = "rbxassetid://134610671303702", BackgroundColor3 = Color3.fromRGB(25, 18, 45), BackgroundTransparency = 0.2, Draggable = true, Active = true}) C(TB, UDim.new(1, 0)) S(TB, Color3.fromRGB(130, 70, 220), 2)
 local M = N("Frame", SG, {Position = UDim2.new(0.5, -275, 0.5, -175), Size = UDim2.new(0, 550, 0, 350), BackgroundColor3 = Color3.fromRGB(22, 15, 38), BackgroundTransparency = 0.25, Visible = false, Active = true, Draggable = true}) C(M, UDim.new(0, 14)) S(M, Color3.fromRGB(130, 70, 220), 2)
 TB.MouseButton1Click:Connect(function() M.Visible = not M.Visible end)
@@ -152,7 +152,7 @@ local function page(n, c)
     return p 
 end
 
-local P1, P2, P4, P5, P3 = page("Home", 1.8), page("Player", 1.5), page("Program", 5.5), page("Attack", 1.5), page("Settings", 1.5) 
+local P1, P2, P4, P5, P3 = page("Home", 1.8), page("Player", 1.5), page("Program", 6.8), page("Attack", 1.5), page("Settings", 1.5) 
 P1.Visible = true
 
 local pages = {P1, P2, P3, P4, P5}
@@ -174,7 +174,6 @@ tab("👤 ผู้เล่น", "", P2) tab("🔑 โปรแกรม", "", 
 local HomeBtn = N("TextButton", P1, {Size = UDim2.new(1,0,0,40), BackgroundColor3 = Color3.fromRGB(95,45,180), BackgroundTransparency = 0.15, Font = Enum.Font.GothamSemibold, Text = "✨ MagicAlay HUB", TextColor3 = Color3.new(1,1,1), TextSize = 14, LayoutOrder = 1}) C(HomeBtn, UDim.new(0, 10))
 local HomeLabel = N("TextLabel", P1, {Size = UDim2.new(1,0,0,70), BackgroundColor3 = Color3.fromRGB(38,26,65), BackgroundTransparency = 0.3, Font = Enum.Font.Gotham, Text = "ศูนย์รวมสคริปต์และชุมชนอย่างเป็นทางการ\nโปรดใช้อย่างระมัดระวัง", TextColor3 = Color3.fromRGB(200,190,225), TextSize = 12, TextWrapped = true, LayoutOrder = 2}) C(HomeLabel, UDim.new(0, 10))
 
--- ช่องเครดิตผู้พัฒนา
 local DevBox = N("Frame", P1, {Size = UDim2.new(1,0,0,65), BackgroundColor3 = Color3.fromRGB(38,26,65), BackgroundTransparency = 0.3, LayoutOrder = 3}) C(DevBox, UDim.new(0, 10))
 N("TextLabel", DevBox, {Size = UDim2.new(1,-20,0,22), Position = UDim2.new(0,10,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = "🛠️ ผู้พัฒนา (Developers)", TextColor3 = Color3.fromRGB(230,220,250), TextSize = 12, TextXAlignment = 0})
 N("TextLabel", DevBox, {Size = UDim2.new(1,-20,0,25), Position = UDim2.new(0,10,0,32), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "Dev by sky, Aek, Saisansk, Weir", TextColor3 = Color3.fromRGB(52, 211, 153), TextSize = 12, TextXAlignment = 0})
@@ -312,7 +311,7 @@ SLMainBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ESP & Target System
+-- ESP System
 local espOn, espC = false, {}
 local function remESP(p) if espC[p] then if espC[p].H then espC[p].H:Destroy() end if espC[p].B then espC[p].B:Destroy() end espC[p] = nil end end
 local function addESP(p)
@@ -333,73 +332,66 @@ end
 
 P.PlayerAdded:Connect(function(p) if espOn then addESP(p) end end) P.PlayerRemoving:Connect(remESP)
 
-local selP = ""
-
----------------------------------------------------------
--- 🧩 1. ส่วนระบบสแกน & ค้นหาผู้เล่น (ESP Card)
----------------------------------------------------------
-local ESPBox = N("Frame", P4, {Size = UDim2.new(1,0,0,165), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 4, ClipsDescendants = false}) C(ESPBox, UDim.new(0, 10))
-N("TextLabel", ESPBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "👁️‍🗨️ ระบบสแกน & ค้นหาผู้เล่น", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
-addHelp(ESPBox, "ระบบสแกน", "เปิด ESP เพื่อมองเห็นผู้เล่นอื่นผ่านกำแพง และพิมพ์ค้นหาชื่อได้ทันที")
+local ESPBox = N("Frame", P4, {Size = UDim2.new(1,0,0,90), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 4}) C(ESPBox, UDim.new(0, 10))
+N("TextLabel", ESPBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "👁️‍🗨️ ระบบสแกนผู้เล่น (ESP)", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(ESPBox, "ระบบสแกน", "เปิด ESP เพื่อมองเห็นผู้เล่นอื่นผ่านกำแพง")
 toggleSlider(ESPBox, "สแกนผู้เล่น (ESP)", nil, 0, 0, 36, function(o) espOn = o for _, p in ipairs(P:GetPlayers()) do if o then addESP(p) else remESP(p) end end end)
 
-local SearchBox = N("TextBox", ESPBox, {
+---------------------------------------------------------
+-- 👁️ 1. ระบบส่องดูผู้เล่น (Spectate Box แยกอิสระ)
+---------------------------------------------------------
+local ViewBox = N("Frame", P4, {Size = UDim2.new(1,0,0,165), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 5, ClipsDescendants = false}) C(ViewBox, UDim.new(0, 10))
+N("TextLabel", ViewBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "👁️ ระบบส่องดูผู้เล่น", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(ViewBox, "ระบบส่อง", "พิมพ์ชื่อหรือเลือกผู้เล่นเพื่อส่องดู แล้วกดปุ่มส่องแบบ iOS เพื่อเปิด/ปิด")
+
+local viewSelP = ""
+local ViewSearchBox = N("TextBox", ViewBox, {
     Size = UDim2.new(1, -24, 0, 32),
-    Position = UDim2.new(0, 12, 0, 84),
+    Position = UDim2.new(0, 12, 0, 38),
     BackgroundColor3 = Color3.fromRGB(28, 18, 48),
     BackgroundTransparency = 0.2,
     Font = Enum.Font.Gotham,
-    PlaceholderText = "🔍 พิมพ์ชื่อผู้เล่นเพื่อค้นหา...",
+    PlaceholderText = "🔍 พิมพ์ชื่อเป้าหมายที่จะส่อง...",
     Text = "",
     TextColor3 = Color3.new(1, 1, 1),
     TextSize = 12
-}) C(SearchBox, UDim.new(0, 8))
+}) C(ViewSearchBox, UDim.new(0, 8))
 
-local DB = N("TextButton", ESPBox, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,122), BackgroundColor3 = Color3.fromRGB(48,32,85), BackgroundTransparency = 0.2, Font = Enum.Font.GothamSemibold, Text = "📌 เลือกลิสต์ผู้เล่นทั้งหมด...", TextColor3 = Color3.fromRGB(200,200,200), TextSize = 11}) C(DB, UDim.new(0, 8))
-local DF = N("ScrollingFrame", ESPBox, {Size = UDim2.new(1,-24,0,90), Position = UDim2.new(0,12,0,158), BackgroundColor3 = Color3.fromRGB(30,20,50), BackgroundTransparency = 0.15, Visible = false, ZIndex = 20}) C(DF, UDim.new(0, 8)) N("UIListLayout", DF, {Padding = UDim.new(0,2)})
+local ViewDB = N("TextButton", ViewBox, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,76), BackgroundColor3 = Color3.fromRGB(48,32,85), BackgroundTransparency = 0.2, Font = Enum.Font.GothamSemibold, Text = "📌 เลือกลิสต์ผู้เล่นที่จะส่อง...", TextColor3 = Color3.fromRGB(200,200,200), TextSize = 11}) C(ViewDB, UDim.new(0, 8))
+local ViewDF = N("ScrollingFrame", ViewBox, {Size = UDim2.new(1,-24,0,90), Position = UDim2.new(0,12,0,112), BackgroundColor3 = Color3.fromRGB(30,20,50), BackgroundTransparency = 0.15, Visible = false, ZIndex = 20}) C(ViewDF, UDim.new(0, 8)) N("UIListLayout", ViewDF, {Padding = UDim.new(0,2)})
 
-SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-    local query = SearchBox.Text:lower()
-    if query ~= "" and query ~= "🔍 พิมพ์ชื่อผู้เล่นเพื่อค้นหา..." then
+ViewSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local query = ViewSearchBox.Text:lower()
+    if query ~= "" and query ~= "🔍 พิมพ์ชื่อเป้าหมายที่จะส่อง..." then
         for _, p in ipairs(P:GetPlayers()) do
             if p ~= LP and (p.Name:lower():find(query) or p.DisplayName:lower():find(query)) then
-                selP = p.Name
-                DB.Text = "เลือกแล้ว: "..p.DisplayName.." (@"..p.Name..")"
+                viewSelP = p.Name
+                ViewDB.Text = "เลือกแล้ว: "..p.DisplayName.." (@"..p.Name..")"
                 break
             end
         end
     end
 end)
 
-DB.MouseButton1Click:Connect(function()
-    for _, c in ipairs(DF:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+ViewDB.MouseButton1Click:Connect(function()
+    for _, c in ipairs(ViewDF:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
     for _, p in ipairs(P:GetPlayers()) do
         if p ~= LP then
-            N("TextButton", DF, {Size = UDim2.new(1,0,0,25), BackgroundColor3 = Color3.fromRGB(40,28,70), BackgroundTransparency = 0.2, Font = Enum.Font.Gotham, Text = p.DisplayName.." (@"..p.Name..")", TextColor3 = Color3.new(1,1,1), TextSize = 11, ZIndex = 21}).MouseButton1Click:Connect(function() 
-                selP = p.Name 
-                SearchBox.Text = p.Name
-                DB.Text = "เลือกแล้ว: "..p.DisplayName 
-                DF.Visible = false 
+            N("TextButton", ViewDF, {Size = UDim2.new(1,0,0,25), BackgroundColor3 = Color3.fromRGB(40,28,70), BackgroundTransparency = 0.2, Font = Enum.Font.Gotham, Text = p.DisplayName.." (@"..p.Name..")", TextColor3 = Color3.new(1,1,1), TextSize = 11, ZIndex = 21}).MouseButton1Click:Connect(function() 
+                viewSelP = p.Name 
+                ViewSearchBox.Text = p.Name
+                ViewDB.Text = "เลือกแล้ว: "..p.DisplayName 
+                ViewDF.Visible = false 
             end)
         end
     end
-    DF.CanvasSize, DF.Visible = UDim2.new(0, 0, 0, #P:GetPlayers() * 27), not DF.Visible
+    ViewDF.CanvasSize, ViewDF.Visible = UDim2.new(0, 0, 0, #P:GetPlayers() * 27), not ViewDF.Visible
 end)
 
-local function getTarget() return selP ~= "" and P:FindFirstChild(selP) end
-
----------------------------------------------------------
--- 🧩 2. ส่วนระบบส่อง & วาร์ปผู้เล่น (View & TP Card - แยกอิสระ + ปุ่มส่องปุ่มเดียว iOS Style)
----------------------------------------------------------
-local ViewTpBox = N("Frame", P4, {Size = UDim2.new(1,0,0,135), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 5}) C(ViewTpBox, UDim.new(0, 10))
-N("TextLabel", ViewTpBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "👁️ ส่องดู & วาร์ปเป้าหมาย", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
-addHelp(ViewTpBox, "ส่อง/วาร์ป", "เลือกผู้เล่นแล้วกดปุ่มส่องเพื่อดู (กดซ้ำเพื่อยกเลิก) หรือกดวาร์ปไปหาได้ทันที")
-
--- ปุ่มส่องผู้เล่นปุ่มเดียวแบบ Toggle (iOS Pill Style)
 local isViewing = false
-local ViewToggleBtn = N("TextButton", ViewTpBox, {
+local ViewToggleBtn = N("TextButton", ViewBox, {
     Size = UDim2.new(1, -24, 0, 36),
-    Position = UDim2.new(0, 12, 0, 42),
+    Position = UDim2.new(0, 12, 0, 114),
     BackgroundColor3 = Color3.fromRGB(55, 40, 85),
     BackgroundTransparency = 0.2,
     Font = Enum.Font.GothamSemibold,
@@ -407,12 +399,12 @@ local ViewToggleBtn = N("TextButton", ViewTpBox, {
     TextColor3 = Color3.new(1, 1, 1),
     TextSize = 12
 }) 
-C(ViewToggleBtn, UDim.new(0, 10)) 
+C(ViewToggleBtn, UDim.new(0, 12)) 
 S(ViewToggleBtn, Color3.fromRGB(130, 70, 220), 1.5)
 
 ViewToggleBtn.MouseButton1Click:Connect(function()
     isViewing = not isViewing
-    local t = getTarget()
+    local t = viewSelP ~= "" and P:FindFirstChild(viewSelP)
     if isViewing then
         if t and t.Character and t.Character:FindFirstChild("Humanoid") then
             Cam.CameraSubject = t.Character.Humanoid
@@ -422,7 +414,7 @@ ViewToggleBtn.MouseButton1Click:Connect(function()
         else
             isViewing = false
             ViewToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
-            ViewToggleBtn.Text = "❌ กรุณาเลือกผู้เล่นก่อน!"
+            ViewToggleBtn.Text = "❌ กรุณาเลือกผู้เล่นที่จะส่องก่อน!"
             task.delay(1.5, function()
                 if not isViewing then
                     ViewToggleBtn.BackgroundColor3 = Color3.fromRGB(55, 40, 85)
@@ -440,10 +432,60 @@ ViewToggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ปุ่มวาร์ป (iOS Pill Style)
-local TpBtn = N("TextButton", ViewTpBox, {
+---------------------------------------------------------
+-- 🌀 2. ระบบวาร์ปไปหาผู้เล่น (Teleport Box แยกอิสระ)
+---------------------------------------------------------
+local TpBox = N("Frame", P4, {Size = UDim2.new(1,0,0,165), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 6, ClipsDescendants = false}) C(TpBox, UDim.new(0, 10))
+N("TextLabel", TpBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🌀 ระบบวาร์ปไปหาผู้เล่น", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
+addHelp(TpBox, "ระบบวาร์ป", "พิมพ์ชื่อหรือเลือกผู้เล่นเพื่อวาร์ปไปหาทันที")
+
+local tpSelP = ""
+local TpSearchBox = N("TextBox", TpBox, {
+    Size = UDim2.new(1, -24, 0, 32),
+    Position = UDim2.new(0, 12, 0, 38),
+    BackgroundColor3 = Color3.fromRGB(28, 18, 48),
+    BackgroundTransparency = 0.2,
+    Font = Enum.Font.Gotham,
+    PlaceholderText = "🔍 พิมพ์ชื่อเป้าหมายที่จะวาร์ปไป...",
+    Text = "",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 12
+}) C(TpSearchBox, UDim.new(0, 8))
+
+local TpDB = N("TextButton", TpBox, {Size = UDim2.new(1,-24,0,32), Position = UDim2.new(0,12,0,76), BackgroundColor3 = Color3.fromRGB(48,32,85), BackgroundTransparency = 0.2, Font = Enum.Font.GothamSemibold, Text = "📌 เลือกลิสต์ผู้เล่นที่จะวาร์ป...", TextColor3 = Color3.fromRGB(200,200,200), TextSize = 11}) C(TpDB, UDim.new(0, 8))
+local TpDF = N("ScrollingFrame", TpBox, {Size = UDim2.new(1,-24,0,90), Position = UDim2.new(0,12,0,112), BackgroundColor3 = Color3.fromRGB(30,20,50), BackgroundTransparency = 0.15, Visible = false, ZIndex = 20}) C(TpDF, UDim.new(0, 8)) N("UIListLayout", TpDF, {Padding = UDim.new(0,2)})
+
+TpSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local query = TpSearchBox.Text:lower()
+    if query ~= "" and query ~= "🔍 พิมพ์ชื่อเป้าหมายที่จะวาร์ปไป..." then
+        for _, p in ipairs(P:GetPlayers()) do
+            if p ~= LP and (p.Name:lower():find(query) or p.DisplayName:lower():find(query)) then
+                tpSelP = p.Name
+                TpDB.Text = "เลือกแล้ว: "..p.DisplayName.." (@"..p.Name..")"
+                break
+            end
+        end
+    end
+end)
+
+TpDB.MouseButton1Click:Connect(function()
+    for _, c in ipairs(TpDF:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+    for _, p in ipairs(P:GetPlayers()) do
+        if p ~= LP then
+            N("TextButton", TpDF, {Size = UDim2.new(1,0,0,25), BackgroundColor3 = Color3.fromRGB(40,28,70), BackgroundTransparency = 0.2, Font = Enum.Font.Gotham, Text = p.DisplayName.." (@"..p.Name..")", TextColor3 = Color3.new(1,1,1), TextSize = 11, ZIndex = 21}).MouseButton1Click:Connect(function() 
+                tpSelP = p.Name 
+                TpSearchBox.Text = p.Name
+                TpDB.Text = "เลือกแล้ว: "..p.DisplayName 
+                TpDF.Visible = false 
+            end)
+        end
+    end
+    TpDF.CanvasSize, TpDF.Visible = UDim2.new(0, 0, 0, #P:GetPlayers() * 27), not TpDF.Visible
+end)
+
+local TpBtn = N("TextButton", TpBox, {
     Size = UDim2.new(1, -24, 0, 36),
-    Position = UDim2.new(0, 12, 0, 86),
+    Position = UDim2.new(0, 12, 0, 114),
     BackgroundColor3 = Color3.fromRGB(52, 150, 220),
     BackgroundTransparency = 0.2,
     Font = Enum.Font.GothamSemibold,
@@ -451,11 +493,11 @@ local TpBtn = N("TextButton", ViewTpBox, {
     TextColor3 = Color3.new(1, 1, 1),
     TextSize = 12
 }) 
-C(TpBtn, UDim.new(0, 10)) 
+C(TpBtn, UDim.new(0, 12)) 
 S(TpBtn, Color3.fromRGB(130, 70, 220), 1.5)
 
 TpBtn.MouseButton1Click:Connect(function()
-    local t = getTarget()
+    local t = tpSelP ~= "" and P:FindFirstChild(tpSelP)
     if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(2, 0, 0)
     end
