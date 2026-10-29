@@ -1,4 +1,4 @@
--- MagicAlay Hub UI Script (Mini Edition + iOS Style + Separated Spectate & Teleport)
+-- MagicAlay Hub UI Script (Mini Edition + iOS Style + Smart Slow/Auto-Move AFK)
 local P, R, T, U, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TweenService"), game:GetService("UserInputService"), game:GetService("VirtualUser")
 local LP, Cam, CG = P.LocalPlayer, workspace.CurrentCamera, gethui and gethui() or LP:WaitForChild("PlayerGui")
 
@@ -244,14 +244,46 @@ toggleSlider(PFC, "👻 ทะลุกำแพง", nil, 0, 0, 136, function(o
 -- Program Section
 local ProgramHeader = N("TextButton", P4, {Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Color3.fromRGB(95, 45, 180), BackgroundTransparency = 0.15, Font = Enum.Font.GothamSemibold, Text = "🔑 ระบบและโปรแกรมเสริม", TextColor3 = Color3.new(1, 1, 1), TextSize = 14, LayoutOrder = 1}) C(ProgramHeader, UDim.new(0, 10))
 
--- Anti-AFK
+---------------------------------------------------------
+-- 🛡️ ระบบกันหลุด (Anti-AFK แบบเดินช้า + ขยับออโต้ความเร็ว 0.1)
+---------------------------------------------------------
+local isAfkOn = false
 local aConn = nil
 local AAC = N("Frame", P4, {Size = UDim2.new(1,0,0,90), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 2}) C(AAC, UDim.new(0, 10))
 N("TextLabel", AAC, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🛡️ ระบบกันหลุด (Anti-AFK)", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
-addHelp(AAC, "ระบบกันหลุด", "ป้องกันไม่ให้เกมเตะคุณเมื่อ AFK")
-toggleSlider(AAC, "ระบบกันหลุด", nil, 0, 0, 36, function(o)
-    if o then aConn = LP.Idled:Connect(function() pcall(function() V:CaptureController() V:ClickButton2(Vector2.new()) end) end)
-    elseif aConn then aConn:Disconnect() end
+addHelp(AAC, "ระบบกันหลุด", "เมื่อเปิด: เวลาเดินจะเดินช้า และเมื่ออยู่นิ่งจะขยับตัวอัตโนมัติด้วยความเร็ว 0.1")
+
+local afkToggleRow = N("Frame", AAC, {Size = UDim2.new(1,-24,0,34), Position = UDim2.new(0,12,0,38), BackgroundColor3 = Color3.fromRGB(28, 18, 48), BackgroundTransparency = 0.3}) C(afkToggleRow, UDim.new(0, 6))
+N("TextLabel", afkToggleRow, {Size = UDim2.new(0.6,0,1,0), Position = UDim2.new(0,10,0,0), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "เปิด/ปิด ระบบกันหลุด", TextColor3 = Color3.fromRGB(220,220,220), TextSize = 11, TextXAlignment = 0})
+
+local afkTr = N("TextButton", afkToggleRow, {Size = UDim2.new(0,44,0,24), Position = UDim2.new(1,-50,0.5,-12), BackgroundColor3 = Color3.fromRGB(55,40,85), BackgroundTransparency = 0.2, Text = "", AutoButtonColor = false}) C(afkTr, UDim.new(1, 12))
+local afkTk = N("Frame", afkTr, {Size = UDim2.new(0,20,0,20), Position = UDim2.new(0,2,0.5,-10), BackgroundColor3 = Color3.new(1,1,1)}) C(afkTk, UDim.new(1, 0))
+
+afkTr.MouseButton1Click:Connect(function()
+    local active = (afkTk.Position.X.Offset == 2)
+    T:Create(afkTk, TweenInfo.new(0.2), {Position = active and UDim2.new(1,-22,0.5,-10) or UDim2.new(0,2,0.5,-10)}):Play()
+    T:Create(afkTr, TweenInfo.new(0.2), {BackgroundColor3 = active and Color3.fromRGB(52,199,89) or Color3.fromRGB(55,40,85), BackgroundTransparency = active and 0 or 0.2}):Play()
+    
+    isAfkOn = active
+    if active then
+        aConn = LP.Idled:Connect(function()
+            pcall(function()
+                V:CaptureController()
+                V:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                task.wait(0.1)
+                V:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end)
+        end)
+    else
+        if aConn then
+            aConn:Disconnect()
+            aConn = nil
+        end
+        local hum = LP.Character and LP.Character:FindFirstChild("Humanoid")
+        if hum and not spd then
+            hum.WalkSpeed = origSpd
+        end
+    end
 end)
 
 -- ShiftLock
@@ -338,7 +370,7 @@ addHelp(ESPBox, "ระบบสแกน", "เปิด ESP เพื่อม
 toggleSlider(ESPBox, "สแกนผู้เล่น (ESP)", nil, 0, 0, 36, function(o) espOn = o for _, p in ipairs(P:GetPlayers()) do if o then addESP(p) else remESP(p) end end end)
 
 ---------------------------------------------------------
--- 👁️ 1. ระบบส่องดูผู้เล่น (Spectate Box - รวมปุ่มเลื่อน iOS ไว้ข้างบนช่องพิมพ์ชื่อ)
+-- 👁️ 1. ระบบส่องดูผู้เล่น (Spectate Box)
 ---------------------------------------------------------
 local ViewBox = N("Frame", P4, {Size = UDim2.new(1,0,0,155), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 5, ClipsDescendants = false}) C(ViewBox, UDim.new(0, 10))
 N("TextLabel", ViewBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "👁️ ระบบส่องดูผู้เล่น", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
@@ -347,7 +379,6 @@ addHelp(ViewBox, "ระบบส่อง", "เปิดปุ่มสไล�
 local viewSelP = ""
 local isViewing = false
 
--- ปุ่มสไลด์ iOS สำหรับเปิด/ปิดส่อง
 local viewToggleRow = N("Frame", ViewBox, {Size = UDim2.new(1,-24,0,34), Position = UDim2.new(0,12,0,36), BackgroundColor3 = Color3.fromRGB(28, 18, 48), BackgroundTransparency = 0.3}) C(viewToggleRow, UDim.new(0, 6))
 N("TextLabel", viewToggleRow, {Size = UDim2.new(0.6,0,1,0), Position = UDim2.new(0,10,0,0), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "เปิด/ปิด การส่องดู", TextColor3 = Color3.fromRGB(220,220,220), TextSize = 11, TextXAlignment = 0})
 
@@ -378,7 +409,6 @@ viewTr.MouseButton1Click:Connect(function()
     end
 end)
 
--- ช่องเลือกชื่อสำหรับการส่อง (อยู่ในการ์ดเดียวกัน ด้านล่างปุ่มสไลด์)
 local ViewSearchBox = N("TextBox", ViewBox, {
     Size = UDim2.new(1, -24, 0, 30),
     Position = UDim2.new(0, 12, 0, 76),
@@ -435,7 +465,7 @@ ViewDB.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 🌀 2. ระบบวาร์ปไปหาผู้เล่น (Tp Box - แยกอิสระ มีช่องพิมพ์และเลือกชื่อของตัวเอง)
+-- 🌀 2. ระบบวาร์ปไปหาผู้เล่น (Tp Box)
 ---------------------------------------------------------
 local TpBox = N("Frame", P4, {Size = UDim2.new(1,0,0,155), BackgroundColor3 = Color3.fromRGB(38, 26, 65), BackgroundTransparency = 0.3, LayoutOrder = 6, ClipsDescendants = false}) C(TpBox, UDim.new(0, 10))
 N("TextLabel", TpBox, {Size = UDim2.new(1,-24,0,24), Position = UDim2.new(0,12,0,8), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = "🌀 ระบบวาร์ปไปหาผู้เล่น", TextColor3 = Color3.fromRGB(230,230,230), TextSize = 13, TextXAlignment = 0})
@@ -567,8 +597,19 @@ R.Stepped:Connect(function()
         if noclip then for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
         local hum = char:FindFirstChild("Humanoid")
         if hum then 
-            if spd then hum.WalkSpeed = spdVal end 
-            if jmp then hum.JumpPower = jmpVal end 
+            if isAfkOn then
+                if hum.MoveDirection.Magnitude > 0 then
+                    -- เวลาเดินให้เดินช้า
+                    hum.WalkSpeed = 3
+                else
+                    -- อยู่นิ่ง ขยับเองด้วยความเร็ว 0.1
+                    hum.WalkSpeed = 0.1
+                    hum:Move(Vector3.new(0.1, 0, 0))
+                end
+            else
+                if spd then hum.WalkSpeed = spdVal end 
+                if jmp then hum.JumpPower = jmpVal end 
+            end
         end
         
         if shiftLockFeatureOn and isShiftLockActive and char:FindFirstChild("HumanoidRootPart") then
